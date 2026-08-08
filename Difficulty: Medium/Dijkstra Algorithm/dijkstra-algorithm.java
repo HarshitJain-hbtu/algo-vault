@@ -1,8 +1,7 @@
 class Solution {
     public ArrayList<Integer> dijkstra(int V, int[][] edges, int src) {
         // code here
-        // M-1 using priority queue | time O(ElogV) | space O(V + E)
-        // O(Elogv)  in worst case we add all edges in pq so logV time to extract min(poll) from pq and we poll E elements and same for insertion E log V
+        // M-2 using set | time O(ElogV) | space O(V + E)
         // create adj list/ graph
         ArrayList<ArrayList<int[]>> adj = new ArrayList<>();
         
@@ -24,31 +23,44 @@ class Solution {
         Arrays.fill(dist, Integer.MAX_VALUE);
         dist[src] = 0;
         
-        //  Min-Heap Priority Queue to store {distance, vertex}
-        // Ordered by distance ascending
-        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> Integer.compare(a[0], b[0]));
-        pq.offer(new int[]{0, src});
+        // intialize the Treeset to store {distance , node}
+        // it is crucial The comparator must differentiate nodes with the SAME distance.
+        // If we only compare distances, the Set will treat different nodes with 
+        // identical distances as duplicates and refuse to add them.
+        TreeSet<int[]> set = new TreeSet<>((a, b) -> {
+            if (a[0] != b[0]){
+                return Integer.compare(a[0], b[0]);
+            }
+            else {
+                return Integer.compare(a[1], b[1]);
+            }
+        });
+        
+        set.add(new int[]{0, src});
         
         // dijkstra algo 
-        while (!pq.isEmpty()){
-            int[] current = pq.poll();
+        while (!set.isEmpty()){
+            // it retrive and poll the lowest value pair
+            int[] current = set.pollFirst();
             int currentDist = current[0];
             int u = current[1];
             
-            // Optimization: If we've already found a shorter path to this node, skip it
-            if (currentDist > dist[u]) {
-                continue;
-            }
             
             // Traverse all adjacent nodes (neighbors) of the current node
             for (int[] neighbor : adj.get(u)) {
                 int v = neighbor[0];
                 int weight = neighbor[1];
 
-                // Relaxation step: If a shorter path is found, update it and push to PQ
+                // Relaxation step: If a shorter path is found, update it 
                 if (dist[u] + weight < dist[v]) {
+                    
+                    // If the node 'v' was already reached before but we found a better path,
+                    // remove the old, suboptimal distance entry from the set to save space and iteration 
+                    if (dist[v] != Integer.MAX_VALUE){
+                        set.remove(new int[] {dist[v] , v});
+                    }
                     dist[v] = dist[u] + weight;
-                    pq.offer(new int[]{dist[v], v});
+                    set.add(new int[]{dist[v], v});
                 }
             }
         }
